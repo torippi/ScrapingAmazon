@@ -1,0 +1,5 @@
+/env
+/.vscode
+/python
+*.txt
+*.zip
