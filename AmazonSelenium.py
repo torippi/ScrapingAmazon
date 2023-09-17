@@ -1,10 +1,13 @@
 import os
+import re
+import datetime
 import time
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.common.by import By
+import pandas as pd
 
 # メインプログラム
 if __name__ == '__main__':
@@ -54,11 +57,38 @@ if __name__ == '__main__':
 
     # ブラウザのHTMLを取得
     soup = BeautifulSoup(driver.page_source, 'lxml')
+
+
     RankingTitleAndAuthor = soup.select("._cDEzb_p13n-sc-css-line-clamp-1_1Fn1y")
-    RankingTitle = RankingTitleAndAuthor[0::2]
-    RankingAuthor = RankingTitleAndAuthor[1::2]
-    RankingPublish = soup.find_all(class_ = "a-size-small a-color-secondary a-text-normal")
-    RankingPrice = soup.select("._cDEzb_p13n-sc-price-animation-wrapper_3PzN2")
+    
+    # タイトル    
+    RankingTitleRaw = RankingTitleAndAuthor[0::2]
+    RankingTitles = []
+    for title in RankingTitleRaw:
+        Rankingtitle = title.get_text()
+        RankingTitles.append(Rankingtitle)
+
+    # 著作者名（できた）
+    RankingAuthorRaw = RankingTitleAndAuthor[1::2]
+    RankingAuthors = []
+    for author in RankingAuthorRaw:
+        authorName = author.get_text()
+        RankingAuthors.append(authorName)
+
+
+    # 販売方式（できた）
+    RankingPublishRaw = soup.find_all(class_ = "a-size-small a-color-secondary a-text-normal")
+    RankingPublishs = []
+    for publsih in RankingPublishRaw:
+        publishName = publsih.get_text()
+        RankingPublishs.append(publishName)
+
+    # 価格データの取得(できた)
+    RankingPricesRaw = soup.select("._cDEzb_p13n-sc-price-animation-wrapper_3PzN2")
+    RankingPrices = []
+    for price in RankingPricesRaw:
+        RankingPrice = int(price.get_text().replace(',', '').replace('￥',''))
+        RankingPrices.append(RankingPrice)
 
     # レビューのデータ取得(できた)
     RankingRating = []
@@ -75,6 +105,28 @@ if __name__ == '__main__':
             bookrateCount = int(bookrating.find(class_="a-size-small").get_text().replace(',', ''))
         RankingRating.append(bookrate)
         RankingRateCount.append(bookrateCount)
+
+    dt_now = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+    dt_now_str = str(dt_now)
+    print(dt_now_str)
+
+    # データ整理完了
+    # xlsx 出力
+    Ranking = list(range(1,51))
+
+    df = pd.DataFrame({
+    '順位' :Ranking,
+    'タイトル' :RankingTitles,
+    '著者':RankingAuthors,
+    '販売方式':RankingPublishs,
+    '価格':RankingPrices,
+    'レビュー値':RankingRating,
+    'レビュー数':RankingRateCount
+    })
+
+    excel_path = "./test.xlsx"
+    df.to_excel(excel_path, sheet_name=dt_now_str, index=False, header=True, float_format="%.1f",startrow=0, startcol=0)
+
 
     """
     for book in RankingBlock:
