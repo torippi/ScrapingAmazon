@@ -88,7 +88,19 @@ if __name__ == '__main__':
     RankingPrices = []
     for price in RankingPricesRaw:
         RankingPrice = int(price.get_text().replace(',', '').replace('￥',''))
+        URLs = price.select('a[href]')
+        for url in URLs:
+            URL = url.get('href')
         RankingPrices.append(RankingPrice)
+
+    # URLの取得
+    RankingURLRaw = soup.select("._cDEzb_p13n-sc-price-animation-wrapper_3PzN2")
+    RankingURLs = []
+    for url in RankingURLRaw:
+        URLs = url.select('a[href]')
+        for url in URLs:
+            URL = url.get('href')
+            RankingURLs.append("https://amazon.co.jp" + URL)
 
     # レビューのデータ取得(できた)
     RankingRating = []
@@ -108,10 +120,7 @@ if __name__ == '__main__':
 
     dt_now = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
     dt_now_str = str(dt_now)
-    print(dt_now_str)
 
-    # データ整理完了
-    # xlsx 出力
     Ranking = list(range(1,51))
 
     df = pd.DataFrame({
@@ -121,7 +130,8 @@ if __name__ == '__main__':
     '販売方式':RankingPublishs,
     '価格':RankingPrices,
     'レビュー値':RankingRating,
-    'レビュー数':RankingRateCount
+    'レビュー数':RankingRateCount,
+    'URL':RankingURLs
     })
 
     excel_path = "./test.xlsx"
